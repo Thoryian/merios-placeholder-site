@@ -5,7 +5,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
         body {
-            background-color: #000;
+            background: #000;
             color: #fff;
             display: flex;
             flex-direction: column;
@@ -14,12 +14,28 @@
             min-height: 100vh;
             margin: 0;
         }
+        .box {
+            position: relative;
+            width: 400px;
+            height: 300px;
+            margin: 20px;
+        }
         img {
             max-width: 100%;
             height: auto;
             max-height: 500px;
             border-radius: 10px;
-            margin: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .on {
+            opacity: 1;
+        }
+        canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         p {
             font-family: 'Quicksand', sans-serif;
@@ -29,16 +45,80 @@
     </style>
 </head>
 <body>
-    <img id="cat" src="/api/placeholder/400/300" alt="image">
+    <div class="box">
+        <canvas id="spin" width="200" height="200"></canvas>
+        <img id="cat" src="/api/placeholder/400/300" alt="cat image">
+    </div>
     <p>placeholder site</p>
     <script>
+        class S {
+            constructor(c) {
+                this.c = c;
+                this.x = c.getContext('2d');
+                this.m = c.width / 2;
+                this.r = 30;
+                this.t = 12;
+                this.a = 0;
+                this.o = 1;
+                this.run = true;
+                
+                this.x.shadowColor = '#fff';
+                this.x.shadowBlur = 8;
+                this.x.globalCompositeOperation = 'lighter';
+                
+                this.draw();
+            }
+
+            draw() {
+                this.x.clearRect(0, 0, this.c.width, this.c.height);
+                
+                for (let i = 0; i < this.t; i++) {
+                    const r = this.a - (i * 0.15);
+                    const o = 1 - (i / this.t);
+                    
+                    this.x.beginPath();
+                    this.x.strokeStyle = `rgba(255, 255, 255, ${o * this.o})`;
+                    this.x.lineWidth = 4;
+                    this.x.arc(this.m, this.m, this.r, r, r + 1.5);
+                    this.x.stroke();
+                }
+
+                this.a += 0.1;
+                this.run && requestAnimationFrame(() => this.draw());
+            }
+
+            stop() {
+                this.run = false;
+            }
+
+            fade() {
+                const f = () => {
+                    if (this.o <= 0) {
+                        this.stop();
+                        this.c.style.display = 'none';
+                        return;
+                    }
+                    this.o -= 0.05;
+                    requestAnimationFrame(f);
+                };
+                f();
+            }
+        }
+
+        const s = new S(document.getElementById('spin'));
+
         async function getCat() {
             try {
-                const response = await fetch('https://api.thecatapi.com/v1/images/search');
-                const data = await response.json();
-                document.getElementById('cat').src = data[0].url;
-            } catch (error) {
-                console.error('error:', error);
+                const r = await fetch('https://api.thecatapi.com/v1/images/search');
+                const d = await r.json();
+                const i = document.getElementById('cat');
+                i.src = d[0].url;
+                i.onload = () => {
+                    i.classList.add('on');
+                    s.fade();
+                };
+            } catch (e) {
+                console.error('error:', e);
             }
         }
         getCat();
