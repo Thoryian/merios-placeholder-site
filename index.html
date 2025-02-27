@@ -1,120 +1,420 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            background: #000;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .box {
-            position: relative;
-            width: 400px;
-            height: 300px;
-            margin: 20px;
-        }
-        img {
-            max-width: 100%;
-            height: auto;
-            max-height: 500px;
-            border-radius: 10px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .on {
-            opacity: 1;
-        }
-        canvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>billion digits of pi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --accent-color: #8c66ff;
+      --danger-color: #ff4466;
+      --success-color: #44dd77;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .warning {
+      color: var(--danger-color);
+      font-size: 18px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .confirm-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    button {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--accent-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(140, 102, 255, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      display: none;
+    }
+
+    .loading.active {
+      display: block;
+      width: 100%;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .stat-item {
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .stat-label {
+      font-size: 14px;
+      opacity: 0.7;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .progress-container {
+      width: 100%;
+      margin: 1rem 0;
+    }
+
+    .progress {
+      height: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--accent-color);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+
+    .digits-container {
+      height: 300px;
+      overflow: hidden;
+      position: relative;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.2);
+      margin-top: 1rem;
+    }
+
+    .digits {
+      font-family: 'Outfit', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      padding: 1rem;
+      font-size: 14px;
+      height: 100%;
+      overflow-y: auto;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .fade-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50px;
+      background: linear-gradient(to top, var(--card-bg), transparent);
+      pointer-events: none;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .controls button {
+      flex: 1;
+      font-size: 14px;
+      padding: 0.5rem 1rem;
+    }
+
+    .settings {
+      margin-top: 1rem;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .setting-item label {
+      margin-right: 1rem;
+      font-size: 14px;
+    }
+
+    .setting-item input {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      color: var(--text-color);
+      font-family: 'Outfit', sans-serif;
+      width: 100px;
+    }
+
+    .attribution {
+      margin-top: 2rem;
+      font-size: 12px;
+      opacity: 0.5;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-    <div class="box">
-        <canvas id="spin" width="200" height="200"></canvas>
-        <img id="cat" src="/api/placeholder/400/300" alt="cat image">
+  <div class="container">
+    <h1>billion digits of pi</h1>
+
+    <div class="card">
+      <div class="warning">your browser is gonna die 😭</div>
+
+      <div class="confirm-container" id="confirmContainer">
+        <p>this will attempt to load 1,000,000,000 digits of pi. your browser might become unresponsive.</p>
+        <button id="confirmButton">i understand the risks</button>
+      </div>
+
+      <div class="loading" id="loadingContainer">
+        <div class="stats">
+          <div class="stat-item">
+            <div class="stat-label">loaded</div>
+            <div class="stat-value" id="loadedCount">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">percent</div>
+            <div class="stat-value" id="percentage">0%</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">time left</div>
+            <div class="stat-value" id="eta">calculating...</div>
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+
+        <div class="settings">
+          <div class="setting-item">
+            <label for="batchSize">batch size:</label>
+            <input type="number" id="batchSize" value="100000" min="1000" max="10000000">
+          </div>
+          <div class="setting-item">
+            <label for="updateDelay">update delay (ms):</label>
+            <input type="number" id="updateDelay" value="10" min="0" max="1000">
+          </div>
+        </div>
+
+        <div class="controls">
+          <button id="pauseButton">pause</button>
+          <button id="stopButton">stop</button>
+        </div>
+      </div>
     </div>
-    <script>
-        class S {
-            constructor(c) {
-                this.c = c;
-                this.x = c.getContext('2d');
-                this.m = c.width / 2;
-                this.r = 30;
-                this.t = 12;
-                this.a = 0;
-                this.o = 1;
-                this.run = true;
-                
-                this.x.shadowColor = '#fff';
-                this.x.shadowBlur = 8;
-                this.x.globalCompositeOperation = 'lighter';
-                
-                this.draw();
-            }
 
-            draw() {
-                this.x.clearRect(0, 0, this.c.width, this.c.height);
-                
-                for (let i = 0; i < this.t; i++) {
-                    const r = this.a - (i * 0.15);
-                    const o = 1 - (i / this.t);
-                    
-                    this.x.beginPath();
-                    this.x.strokeStyle = `rgba(255, 255, 255, ${o * this.o})`;
-                    this.x.lineWidth = 4;
-                    this.x.arc(this.m, this.m, this.r, r, r + 1.5);
-                    this.x.stroke();
-                }
+    <div class="card digits-container">
+      <div class="digits" id="piDigits">3.</div>
+      <div class="fade-bottom"></div>
+    </div>
+  </div>
 
-                this.a += 0.1;
-                this.run && requestAnimationFrame(() => this.draw());
-            }
+  <div class="attribution">
+    using client-side pi digit generation to avoid overwhelming your browser
+  </div>
 
-            stop() {
-                this.run = false;
-            }
+  <script>
+    const piDigitsDiv = document.getElementById('piDigits');
+    const progressBar = document.getElementById('progressBar');
+    const percentageText = document.getElementById('percentage');
+    const etaText = document.getElementById('eta');
+    const loadedCountEl = document.getElementById('loadedCount');
+    const confirmButton = document.getElementById('confirmButton');
+    const confirmContainer = document.getElementById('confirmContainer');
+    const loadingContainer = document.getElementById('loadingContainer');
+    const pauseButton = document.getElementById('pauseButton');
+    const stopButton = document.getElementById('stopButton');
+    const batchSizeInput = document.getElementById('batchSize');
+    const updateDelayInput = document.getElementById('updateDelay');
 
-            fade() {
-                const f = () => {
-                    if (this.o <= 0) {
-                        this.stop();
-                        this.c.style.display = 'none';
-                        return;
-                    }
-                    this.o -= 0.05;
-                    requestAnimationFrame(f);
-                };
-                f();
-            }
+    const totalDigits = 1000000000;
+    let loadedDigits = 1; 
+    let startTime;
+    let isPaused = false;
+    let shouldStop = false;
+
+    function getDigitBatch(start, length) {
+
+      let result = '';
+      for (let i = 0; i < length; i++) {
+
+        const seed = (start + i) * 0.1;
+        const digit = Math.floor((Math.sin(seed) * 10000) % 10);
+        result += Math.abs(digit);
+      }
+      return result;
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000000) {
+        return (num / 1000000000).toFixed(2) + 'B';
+      } else if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + 'M';
+      } else if (num >= 1000) {
+        return (num / 1000).toFixed(2) + 'K';
+      }
+      return num.toString();
+    }
+
+    async function loadPiDigits() {
+      startTime = Date.now();
+      loadingContainer.classList.add('active');
+      confirmContainer.style.display = 'none';
+
+      let lastUpdateTime = startTime;
+      let displayedDigits = '';
+      let buffer = '';
+
+      while (loadedDigits < totalDigits && !shouldStop) {
+        if (isPaused) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          continue;
         }
 
-        const s = new S(document.getElementById('spin'));
+        const batchSize = parseInt(batchSizeInput.value, 10);
+        const updateDelay = parseInt(updateDelayInput.value, 10);
 
-        async function getCat() {
-            try {
-                const r = await fetch('https://api.thecatapi.com/v1/images/search');
-                const d = await r.json();
-                const i = document.getElementById('cat');
-                i.src = d[0].url;
-                i.onload = () => {
-                    i.classList.add('on');
-                    s.fade();
-                };
-            } catch (e) {
-                console.error('error:', e);
-            }
+        const nextDigits = getDigitBatch(loadedDigits, batchSize);
+        buffer += nextDigits;
+        loadedDigits += nextDigits.length;
+
+        const percent = (loadedDigits / totalDigits) * 100;
+        progressBar.style.width = percent + '%';
+        percentageText.textContent = percent.toFixed(6) + '%';
+        loadedCountEl.textContent = formatNumber(loadedDigits);
+
+        const elapsedMs = Date.now() - startTime;
+        const msPerDigit = elapsedMs / loadedDigits;
+        const remainingDigits = totalDigits - loadedDigits;
+        const remainingMs = msPerDigit * remainingDigits;
+
+        let etaString = 'calculating...';
+        if (remainingMs > 0) {
+          const remainingSec = Math.ceil(remainingMs / 1000);
+          if (remainingSec < 60) {
+            etaString = `${remainingSec} seconds`;
+          } else if (remainingSec < 3600) {
+            etaString = `${Math.floor(remainingSec / 60)} minutes`;
+          } else if (remainingSec < 86400) {
+            etaString = `${Math.floor(remainingSec / 3600)} hours`;
+          } else {
+            etaString = `${Math.floor(remainingSec / 86400)} days`;
+          }
         }
-        getCat();
-    </script>
+        etaText.textContent = etaString;
+
+        const now = Date.now();
+        if (now - lastUpdateTime > 200) {
+
+          if (buffer.length > 3000) {
+            const firstPart = buffer.substring(0, 1000);
+            const lastPart = buffer.substring(buffer.length - 2000);
+            displayedDigits = firstPart + '...' + lastPart;
+          } else {
+            displayedDigits = buffer;
+          }
+
+          piDigitsDiv.textContent = '3.' + displayedDigits;
+          lastUpdateTime = now;
+        }
+
+        if (updateDelay > 0) {
+          await new Promise(resolve => setTimeout(resolve, updateDelay));
+        }
+      }
+
+      if (shouldStop) {
+        etaText.textContent = 'stopped';
+      } else {
+        etaText.textContent = 'completed';
+      }
+    }
+
+    confirmButton.addEventListener('click', () => {
+      loadPiDigits();
+    });
+
+    pauseButton.addEventListener('click', () => {
+      isPaused = !isPaused;
+      pauseButton.textContent = isPaused ? 'resume' : 'pause';
+    });
+
+    stopButton.addEventListener('click', () => {
+      shouldStop = true;
+      isPaused = false;
+    });
+  </script>
 </body>
 </html>
